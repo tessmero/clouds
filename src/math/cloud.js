@@ -10,11 +10,11 @@ class Cloud{
         this.yr = global.cloudBoundsYr
         
         // children
+        this.nVertsPerChild = (rand()>.1) ? 50 : Math.floor(randRange(3,6))
         this.circles = this.buildChildren()
-        this.nVertsPerChild = (rand()>.2) ? 30 : Math.floor(randRange(3,6))
         
         // overall shape
-        this.nVertsForRoughShape = this.nVertsPerChild+2
+        this.nVertsForRoughShape = this.nVertsPerChild+6
     }
     
     buildChildren(){
@@ -24,15 +24,20 @@ class Cloud{
             var a = randRange(0,twopi)
             var rr = randRange(.01,.02)
             var pos = v( r*this.xr*Math.cos(a), r*this.yr*Math.sin(a) )
+            var av = 0
+            if( this.nVertsPerChild < 10 ){
+                av = randRange(...global.childSpinSpeed) * (rand()>.5?-1:1)
+            }
             result.push({
                 pos: pos,
                 vel: v(0,0),
                 r:rr,
                 r2:rr*rr,
                 a:0,
-                av:randRange(...global.childSpinSpeed) * (rand()>.5?-1:1),
+                av:av,
             })
         }
+        
         return result
     }
     
@@ -42,6 +47,9 @@ class Cloud{
         // update pos
         this.angleOffset += this.avel*dt
         var vt = this.vel.mul(dt)
+        if( global.pointiness > 0 ){
+            vt = vt.mul(1-(global.pointiness/global.maxPointiness))
+        }
         this.pos = this.pos.add(vt)
         
         // apply friction
@@ -53,11 +61,27 @@ class Cloud{
           
         
             c.pos = c.pos.add(c.vel.mul(dt))
-            c.a += c.av*dt
-            var dp = c.pos//.sub(this.pos)
-            c.pa = Math.atan2( dp.y/this.yr, dp.x/this.xr )
             //c.a = c.pa
             c.vel  = c.vel.mul(fm) 
+            
+            var av = c.av
+            if( (av!=0) && (global.pointiness != 0) ){
+                if( isNaN(c.a) ){
+                    c.a = 0
+                }
+                var d = c.pa-c.a
+                var am = .1
+                if( Math.abs(d) < am ){
+                    av = 0
+                } else {
+                    av = (d/am) * global.childSpinSpeed[1]
+                    av /= 5*Math.max(1,global.pointiness)
+                    c.vel = c.vel.mul(1/10*Math.max(1,global.pointiness))
+                }
+            }
+            c.a += av*dt
+            var dp = c.pos//.sub(this.pos)
+            c.pa = Math.atan2( dp.y/this.yr, dp.x/this.xr )
             
         
             // tend towards region just inside bounding ellipse
@@ -122,15 +146,19 @@ class Cloud{
             g.stroke()
         }
         
-        // draw circles
+        // draw cloud
         if( true ){
             g.fillStyle = (firstPass ? 'black' : 'white')
+            
+            // draw overall shape
+            this.roughPath(g,firstPass)
+            g.fill()
+            
+            // draw details
             this.circles.forEach(c => {
                 this.childPath(g,c,firstPass)
                 g.fill()
             })
-            this.roughPath(g,firstPass)
-            g.fill()
         }
         
         
@@ -183,6 +211,22 @@ class Cloud{
         }
     }
     
+    
+    // pick edge width
+    // used in childPath
+    getChildEdgeWidth(){
+        var result = global.edgeWidth
+        if( this.nVertsPerChild == 3 ){
+            return result * 1.5
+        } else if( this.nVertsPerChild == 4 ){
+            return result * 1.3
+        } else if( this.nVertsPerChild == 5 ){
+            return result * 1.15
+        }
+        
+        return Math.max(result, global.edgeWidth*global.pointiness)
+    }
+    
     // build path for cloud detail element
     // used in draw
     childPath(g,c,outer){
@@ -192,10 +236,12 @@ class Cloud{
         //g.arc(c.pos.x,c.pos.y,c.r+(outer?global.edgeWidth:0),0,twopi)
         
         var n = this.nVertsPerChild
-        var r = c.r+(outer?global.edgeWidth:0)
+        var r = c.r+(outer?this.getChildEdgeWidth():0)
         var first = true
         for( var i = 0 ; i < n ; i++ ){
-            var a = c.a+twopi*i/n
+            var oa = c.a
+            //oa = avg( oa,0,global.pointiness)
+            var a = oa+twopi*i/n
             
             var rr = avg( r, this.pointyRad(c,a,r), global.pointiness )
             var p = this.pos.add(c.pos.add(vp(a,rr)))

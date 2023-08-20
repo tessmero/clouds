@@ -28,14 +28,18 @@ const global = {
     mousePos: v(0,0),           //virtual units
     
     // objects
-    nClouds: 10,
+    firstUpdate: true,
+    nClouds: 5,
     spawnCountdown: 0,
     spawnDelay: [0,0],
-    oobMargin: .15, //v units
+    oobMargin: .25, //v units
     clouds: [],
     childSpinSpeed: [1e-4,1e-3], //radians per ms
     pointiness: 0,//
-    cloudSpeed: [-1e-4,-1e-5], //v units per ms
+    maxPointiness: 2,
+    mouseDown: false,
+    pointSpeed: 5e-4,//pointiness unites per ms
+    cloudSpeed: [-8e-5,-5e-5], //v units per ms
     
     //,
     nCirclesPerCloud: 20,

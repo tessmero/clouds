@@ -1,31 +1,24 @@
 
 
-
 function update(dt) {    
     fitToContainer()
     global.t += dt
     
-    //global.pointiness = Math.min(1,Math.max(0,.5+Math.sin(global.t/(2000/twopi))))
-    
-    // reset periodically
-    if( false ){
-        global.resetCountdown -= dt
-        if( global.resetCountdown < 0 ){
-            global.clouds = []
-            global.spawnCountdown = 0
-            global.resetCountdown = global.resetDelay
-        }
+    if( global.mouseDown ){
+        global.pointiness = Math.min( global.maxPointiness, global.pointiness+global.pointSpeed*dt)
+    } else {
+        global.pointiness = Math.max( 0, global.pointiness-10*global.pointSpeed*dt)
     }
     
     //spawn new clouds
-    if( (global.clouds.length < global.nClouds) && (global.spawnCountdown<=0) ){
+    while( (global.clouds.length < global.nClouds) && (global.spawnCountdown<=0) ){
         global.spawnCountdown = randRange( ...global.spawnDelay )
-        var x = global.screenCorners[2].x+global.oobMargin
-        var y = randRange(global.oobMargin,global.screenCorners[2].y-global.oobMargin)
+        var x = (global.firstUpdate ? randomXForCloud() : global.screenCorners[2].x+global.oobMargin)
+        var y = randomYForCloud()
         global.clouds.push( new Cloud( v(x,y) ) )
-    } else {
-        global.spawnCountdown -= dt
     }
+    global.spawnCountdown -= dt
+    global.firstUpdate = false;
     
     // update clouds
     global.clouds.forEach( b => b.update(dt) )
@@ -37,8 +30,8 @@ function update(dt) {
             var result = (b.pos.x+margin>global.screenCorners[0].x) && (b.pos.x-margin<global.screenCorners[2].x) 
                       && (b.pos.y+margin>global.screenCorners[0].y) && (b.pos.y-margin<global.screenCorners[2].y)
             if( !result ){
-                console.log("remove oob cloud")
-                console.log( global.clouds.length )
+                //console.log("remove oob cloud")
+                //console.log( global.clouds.length )
             }
             return result
         })
@@ -48,7 +41,19 @@ function update(dt) {
 
 
 
+// used in update() to spawn new cloud
+function randomYForCloud(){
+    var ym = .1*(global.screenCorners[2].y-global.screenCorners[0].y)
+    var y = randRange(global.screenCorners[0].y+ym,global.screenCorners[2].y-ym)
+    return y
+}
 
+// used in update() to spawn new cloud (only on first update)
+function randomXForCloud(){
+    var xm = .1*(global.screenCorners[2].x-global.screenCorners[0].x)
+    var x = randRange(global.screenCorners[0].x+xm,global.screenCorners[2].x-xm)
+    return x
+}
 
 var lastCanvasOffsetWidth = -1;
 var lastCanvasOffsetHeight = -1;

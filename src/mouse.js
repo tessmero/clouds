@@ -1,5 +1,8 @@
 
 
-function mouseClick(e){
-    global.showPaths = !global.showPaths
+function mouseDown(e){
+    global.mouseDown = true
+}
+function mouseUp(e){
+    global.mouseDown = false
 }

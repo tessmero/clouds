@@ -1,5 +1,7 @@
 Morphing animated cloud outline.
 
+Click and hold to warp cloud shapes.
+
 Outline effect created by layering filled regions with dilation/erosion.
 
 ## Demo

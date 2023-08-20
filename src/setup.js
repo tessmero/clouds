@@ -6,7 +6,10 @@ function init() {
       cvs.style.width='100%';
       cvs.style.height='100%';  
     //cvs.addEventListener("mousemove", mouseMove);
-    cvs.addEventListener("click", mouseClick);
+    cvs.addEventListener("mousedown", mouseDown);
+    cvs.addEventListener("mouseup", mouseUp);
+    cvs.addEventListener("touchstart", mouseDown, false);
+    cvs.addEventListener("touchend", mouseUp, false);
     global.canvas = cvs
     global.ctx = cvs.getContext("2d");
     
