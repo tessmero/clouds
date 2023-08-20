@@ -4,14 +4,13 @@
 // Render graphics
 function draw(fps, t) {
     
-    resetRand()
-    
     var ctx = global.ctx
     var canvas = global.canvas
     ctx.fillStyle = global.backgroundColor
     ctx.fillRect( 0, 0, canvas.width, canvas.height )
 
-    global.clouds.forEach( b => b.draw(ctx) )
+    global.clouds.forEach( b => b.draw(ctx,true) )
+    global.clouds.forEach( b => b.draw(ctx,false) )
 
     if( false ){
         //debug

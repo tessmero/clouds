@@ -13,7 +13,7 @@ const global = {
     ctx: null,
 
     // 
-    backgroundColor: 'white',
+    backgroundColor: '#EEE',
     edgeWidth: .002,
     
     // relate screen pixels to virtual 2D units
@@ -28,12 +28,14 @@ const global = {
     mousePos: v(0,0),           //virtual units
     
     // objects
-    nClouds: 1,
+    nClouds: 10,
     spawnCountdown: 0,
-    spawnDelay: [100,1000],
+    spawnDelay: [0,0],
+    oobMargin: .15, //v units
     clouds: [],
-    //childSpinSpeed: [1e-4,1e-3], //radians per ms
-    pointiness: .5,//
+    childSpinSpeed: [1e-4,1e-3], //radians per ms
+    pointiness: 0,//
+    cloudSpeed: [-1e-4,-1e-5], //v units per ms
     
     //,
     nCirclesPerCloud: 20,

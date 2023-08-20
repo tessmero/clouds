@@ -5,7 +5,7 @@ function update(dt) {
     fitToContainer()
     global.t += dt
     
-    global.pointiness = Math.min(1,Math.max(0,.5+Math.sin(global.t/(2000/twopi))))
+    //global.pointiness = Math.min(1,Math.max(0,.5+Math.sin(global.t/(2000/twopi))))
     
     // reset periodically
     if( false ){
@@ -20,7 +20,9 @@ function update(dt) {
     //spawn new clouds
     if( (global.clouds.length < global.nClouds) && (global.spawnCountdown<=0) ){
         global.spawnCountdown = randRange( ...global.spawnDelay )
-        global.clouds.push( new Cloud( v(.5,.5) ) )
+        var x = global.screenCorners[2].x+global.oobMargin
+        var y = randRange(global.oobMargin,global.screenCorners[2].y-global.oobMargin)
+        global.clouds.push( new Cloud( v(x,y) ) )
     } else {
         global.spawnCountdown -= dt
     }
@@ -29,10 +31,11 @@ function update(dt) {
     global.clouds.forEach( b => b.update(dt) )
     
     // remove OOB clouds
-    if( false ){
+    if( true ){
         global.clouds = global.clouds.filter( b => {
-            var result = (b.pos.x>-1) && (b.pos.x<2) 
-                      && (b.pos.y>-1) && (b.pos.y<2)
+            var margin = global.oobMargin
+            var result = (b.pos.x+margin>global.screenCorners[0].x) && (b.pos.x-margin<global.screenCorners[2].x) 
+                      && (b.pos.y+margin>global.screenCorners[0].y) && (b.pos.y-margin<global.screenCorners[2].y)
             if( !result ){
                 console.log("remove oob cloud")
                 console.log( global.clouds.length )

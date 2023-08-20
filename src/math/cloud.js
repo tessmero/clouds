@@ -3,14 +3,18 @@ class Cloud{
         
         // overall position
         this.pos = pos
-        this.vel = v(0,0)
+        this.vel = v(randRange(...global.cloudSpeed),0)
         
-        // bounding ellipse
+        // bounding ellipse for children
         this.xr = global.cloudBoundsXr
         this.yr = global.cloudBoundsYr
         
-        // inner circles
+        // children
         this.circles = this.buildChildren()
+        this.nVertsPerChild = (rand()>.2) ? 30 : Math.floor(randRange(3,6))
+        
+        // overall shape
+        this.nVertsForRoughShape = this.nVertsPerChild+2
     }
     
     buildChildren(){
@@ -19,14 +23,14 @@ class Cloud{
             var r = 1
             var a = randRange(0,twopi)
             var rr = randRange(.01,.02)
-            var pos = this.pos.add(v( r*this.xr*Math.cos(a), r*this.yr*Math.sin(a) ))
+            var pos = v( r*this.xr*Math.cos(a), r*this.yr*Math.sin(a) )
             result.push({
                 pos: pos,
                 vel: v(0,0),
                 r:rr,
                 r2:rr*rr,
                 a:0,
-                //av:randRange(...global.childSpinSpeed) * (rand()>.5?-1:1),
+                av:randRange(...global.childSpinSpeed) * (rand()>.5?-1:1),
             })
         }
         return result
@@ -37,26 +41,27 @@ class Cloud{
         
         // update pos
         this.angleOffset += this.avel*dt
-        this.pos = this.pos.add(this.vel.mul(dt))
+        var vt = this.vel.mul(dt)
+        this.pos = this.pos.add(vt)
         
         // apply friction
         var fm = 1-(4e-3*dt)
-        this.vel  = this.vel.mul(fm) 
+        //this.vel  = this.vel.mul(fm) 
         
         // update circles
         this.circles.forEach(c => {
           
         
             c.pos = c.pos.add(c.vel.mul(dt))
-            //c.a += c.av*dt
-            var dp = c.pos.sub(this.pos)
+            c.a += c.av*dt
+            var dp = c.pos//.sub(this.pos)
             c.pa = Math.atan2( dp.y/this.yr, dp.x/this.xr )
-            c.a = c.pa
+            //c.a = c.pa
             c.vel  = c.vel.mul(fm) 
             
         
             // tend towards region just inside bounding ellipse
-            var d = c.pos.sub(this.pos)
+            var d = c.pos//.sub(this.pos)
             var r = Math.sqrt( Math.pow( d.x/this.xr, 2 ) + Math.pow( d.y/this.yr, 2 ) )            
             if( r > 1  ){
                 var g = 1e-6
@@ -100,7 +105,7 @@ class Cloud{
         })
     }
 
-    draw(g){
+    draw(g,firstPass){
         
         
         // draw cloud
@@ -117,27 +122,14 @@ class Cloud{
             g.stroke()
         }
         
-        // debug
         // draw circles
         if( true ){
-            var dr = global.edgeWidth
-            g.fillStyle = 'black'
-            g.beginPath()
+            g.fillStyle = (firstPass ? 'black' : 'white')
             this.circles.forEach(c => {
-                this.childPath(g,c,true)
+                this.childPath(g,c,firstPass)
                 g.fill()
             })
-            g.beginPath()
-            g.ellipse(this.pos.x,this.pos.y,this.xr+dr,this.yr+dr,0,0,twopi)
-            g.fill()
-            
-            g.fillStyle = 'white'
-            this.circles.forEach(c => {
-                this.childPath(g,c,false)
-                g.fill()
-            })
-            g.beginPath()
-            g.ellipse(this.pos.x,this.pos.y,this.xr,this.yr,0,0,twopi)
+            this.roughPath(g,firstPass)
             g.fill()
         }
         
@@ -152,59 +144,61 @@ class Cloud{
                 g.fillRect( i.x-r,i.y-r,2*r,2*r )
             })
         }
-        
-        // debug 
-        // draw twisting details
-        if( false ) {
-            g.font = ".02px Arial";
-            g.textAlign = "center";
-            g.textBaseline = 'middle';
-            g.fillStyle = "red";
-            var x = .4
-            var y = .4
-            g.fillText(this.angleOffset.toFixed(3), this.pos.x, this.pos.y-.01 );
-            g.fillText(this.targetAngle.toFixed(3), this.pos.x, this.pos.y+.01 );
-        }
-        
-        // debug 
-        // draw retraction info
-        if( false ) {
-            g.font = ".02px Arial";
-            g.textAlign = "center";
-            g.textBaseline = 'middle';
-            g.fillStyle = "red";
-            var x = .4
-            var y = .4
-            g.fillText(this.stemRetracting, this.pos.x, this.pos.y-.01 );
-            g.fillText(this.stemRetraction, this.pos.x, this.pos.y+.01 );
-        }
     }
     
     // used in childPath
     pointyRad(c,a,r){
         var da = Math.abs(cleanAngle( c.pa-a ))
         //return r*Math.max(1,2-da) // petal
-        
         // return r+.01/da // mesa
         return r+.01/(da+.1)
         
     }
     
-    // build path for child
+    // build path for overall cloud shape
+    // used in draw
+    roughPath(g,outer){
+        //g.ellipse(this.pos.x,this.pos.y,this.xr+dr,this.yr+dr,0,0,twopi)
+        
+        g.beginPath()
+       
+        var dr = (outer ? global.edgeWidth : 0)
+        var xr = this.xr+dr
+        var yr = this.yr+dr
+        var n = this.nVertsForRoughShape
+        var first = true
+        
+        for( var i = 0 ; i < n ; i++ ){
+            var a = twopi*i/n
+            
+            var x = Math.cos(a)*xr
+            var y = Math.sin(a)*yr
+            var p = this.pos.add(v(x,y))
+            
+            if( i == 0 ){
+                g.moveTo( p.x,p.y )
+            } else {
+                g.lineTo( p.x,p.y )
+            }
+        }
+    }
+    
+    // build path for cloud detail element
+    // used in draw
     childPath(g,c,outer){
         
         
         g.beginPath()
         //g.arc(c.pos.x,c.pos.y,c.r+(outer?global.edgeWidth:0),0,twopi)
         
-        var n = 30
+        var n = this.nVertsPerChild
         var r = c.r+(outer?global.edgeWidth:0)
         var first = true
         for( var i = 0 ; i < n ; i++ ){
             var a = c.a+twopi*i/n
             
             var rr = avg( r, this.pointyRad(c,a,r), global.pointiness )
-            var p = c.pos.add(vp(a,rr))
+            var p = this.pos.add(c.pos.add(vp(a,rr)))
             
             if( i == 0 ){
                 g.moveTo( p.x,p.y )
